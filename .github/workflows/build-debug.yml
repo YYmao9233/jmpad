@@ -18,14 +18,29 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: setup android sdk
-        uses: android-actions/setup-android@v3
+      # 打印 runner 自带的 Android SDK 与版本，便于排查
+      - name: inspect sdk
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          ls -la "$ANDROID_HOME/platforms" 2>/dev/null || echo "no platforms dir"
+          ls -la "$ANDROID_HOME/build-tools" 2>/dev/null || echo "no build-tools dir"
+          ls -la "$ANDROID_HOME/cmdline-tools" 2>/dev/null || echo "no cmdline-tools dir"
+
+      - name: accept sdk licenses
+        run: |
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          fi
+          echo "licenses check done"
 
       - name: chmod
         run: chmod +x gradlew
 
       - name: build debug apk
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          CI: "true"
 
       - name: generate build time
         id: time
