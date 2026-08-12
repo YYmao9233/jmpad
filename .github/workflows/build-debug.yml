@@ -1,0 +1,40 @@
+name: Build Debug APK
+
+on:
+  workflow_dispatch: # 允许你手动点击按钮触发编译
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: setup java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: setup android sdk
+        uses: android-actions/setup-android@v3
+
+      - name: chmod
+        run: chmod +x gradlew
+
+      - name: build debug apk
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: generate build time
+        id: time
+        run: echo "now=$(date +'%Y%m%d%H%M')" >> "$GITHUB_OUTPUT"
+
+      - name: upload debug apk
+        uses: actions/upload-artifact@v6
+        with:
+          name: jm-mobile-debug-${{ steps.time.outputs.now }}
+          path: |
+            app/build/outputs/apk/debug/*.apk
+          retention-days: 7
